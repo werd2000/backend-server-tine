@@ -1,50 +1,43 @@
 var express = require('express');
-var bcrypt = require('bcryptjs');
-var jwt = require('jsonwebtoken');
 
 var mdAtenticacion = require('../middlewares/autenticacion');
 
 var app = express();
 
-var Usuario = require('../models/usuario');
+var Profesional = require('../models/profesional');
 
-// ===========================
-// Obtener todos los usuarios
-// ===========================
+// ==================================
+// Obtener todos los profesionales
+// ==================================
 app.get('/', (req, res, next) => {
-
     var desde = req.query.desde || 0;
     desde = Number(desde);
-
-    Usuario.find({}, 'nombre apellido email img role')
+    Profesional.find({})
         .skip(desde)
         .limit(5)
+        .populate('usuario', 'nombre email')
+        .populate('centroMedico')
         .exec(
-            (err, usuarios) => {
+            (err, profesionales) => {
                 if (err) {
                     return res.status(500).json({
                         ok: false,
-                        mensaje: 'Error cargando usuarios.',
+                        mensaje: 'Error cargando Profesionales.',
                         errors: err
                     });
                 }
-
-                Usuario.count({}, (err, conteo) => {
+                Profesional.count({}, (err, conteo) => {
                     res.status(200).json({
                         ok: true,
                         total: conteo,
-                        usuarios: usuarios
+                        profesionales: profesionales
                     });
-                });
-
+                })
             });
 });
 
-
-
-
 // ===========================
-// Actualizar usuario
+// Actualizar Profesional
 // ===========================
 
 app.put('/:id', mdAtenticacion.verificaToken, (req, res) => {
@@ -52,103 +45,102 @@ app.put('/:id', mdAtenticacion.verificaToken, (req, res) => {
     var id = req.params.id;
     var body = req.body;
 
-    Usuario.findById(id, (err, usuario) => {
+    Profesional.findById(id, (err, profesional) => {
         if (err) {
             return res.status(500).json({
                 ok: false,
-                mensaje: 'Error al buscar usuario.',
+                mensaje: 'Error al buscar Profesional.',
                 errors: err
             });
         }
 
-        if (!usuario) {
+        if (!profesional) {
             return res.status(400).json({
                 ok: false,
-                mensaje: 'El usuario con el id ' + id + ' no existe.',
-                errors: { message: 'No existe un usuario con ese ID.' }
+                mensaje: 'El Profesional con el id ' + id + ' no existe.',
+                errors: { message: 'No existe un Profesional con ese ID.' }
             });
         }
 
-        usuario.nombre = body.nombre;
-        usuario.apellido = body.apellido;
-        usuario.email = body.email;
-        usuario.role = body.role;
+        profesional.nombre = body.nombre;
+        profesional.apellido = body.apellido;
+        profesional.centroMedico = body.centroMedico;
 
-        usuario.save((err, usuarioGuardado) => {
+        profesional.save((err, profesionalGuardado) => {
             if (err) {
                 return res.status(400).json({
                     ok: false,
-                    mensaje: 'Error al actualizar usuario.',
+                    mensaje: 'Error al actualizar Profesional.',
                     errors: err
                 });
             }
 
             res.status(200).json({
                 ok: true,
-                usuario: usuarioGuardado
+                profesional: profesionalGuardado
             });
         });
     });
 
 });
 
+
 // ===========================
-// Crear un nuevo usuario
+// Crear un nuevo Profesional
 // ===========================
 app.post('/', mdAtenticacion.verificaToken, (req, res) => {
     var body = req.body;
-    var usuario = new Usuario({
+    var profesional = new Profesional({
         nombre: body.nombre,
         apellido: body.apellido,
-        email: body.email,
-        password: bcrypt.hashSync(body.password, 10),
-        img: body.img,
-        role: body.role
+        centroMedico: body.centroMedico,
+        usuario: req.usuario._id
     });
 
-    usuario.save((err, usuarioGuardado) => {
+    profesional.save((err, profesionalGuardado) => {
         if (err) {
             return res.status(400).json({
                 ok: false,
-                mensaje: 'Error al crear usuario.',
+                mensaje: 'Error al crear Profesional.',
                 errors: err
             });
         }
         res.status(201).json({
             ok: true,
-            usuario: usuarioGuardado,
+            profesional: profesionalGuardado,
             usuarioToken: req.usuario
         });
     });
 
 });
 
-// =============================
-// Eliminar un usuario por el id
-// =============================
+// ===================================
+// Eliminar un Profesional por el id
+// ===================================
 app.delete('/:id', mdAtenticacion.verificaToken, (req, res) => {
     var id = req.params.id;
 
-    Usuario.findByIdAndRemove(id, (err, usuarioBorrado) => {
+    Profesional.findByIdAndRemove(id, (err, profesionalBorrado) => {
         if (err) {
             return res.status(500).json({
                 ok: false,
-                mensaje: 'Error al borrar usuario.',
+                mensaje: 'Error al borrar Profesional.',
                 errors: err
             });
         }
-        if (!usuarioBorrado) {
+        if (!profesionalBorrado) {
             return res.status(400).json({
                 ok: false,
-                mensaje: 'El usuario con el id ' + id + ' no existe.',
-                errors: { message: 'No existe un usuario con ese ID.' }
+                mensaje: 'El Profesional con el id ' + id + ' no existe.',
+                errors: { message: 'No existe un Profesional con ese ID.' }
             });
         }
         res.status(200).json({
             ok: true,
-            usuario: usuarioBorrado
+            profesional: profesionalBorrado
         });
     });
 });
+
 
 module.exports = app;

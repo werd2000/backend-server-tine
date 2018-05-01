@@ -1,50 +1,42 @@
 var express = require('express');
-var bcrypt = require('bcryptjs');
-var jwt = require('jsonwebtoken');
 
 var mdAtenticacion = require('../middlewares/autenticacion');
 
 var app = express();
 
-var Usuario = require('../models/usuario');
+var CentroMedico = require('../models/centroMedico');
 
-// ===========================
-// Obtener todos los usuarios
-// ===========================
+// ==================================
+// Obtener todos los centros médicos
+// ==================================
 app.get('/', (req, res, next) => {
-
     var desde = req.query.desde || 0;
     desde = Number(desde);
-
-    Usuario.find({}, 'nombre apellido email img role')
+    CentroMedico.find({})
         .skip(desde)
         .limit(5)
+        .populate('usuario', 'nombre email')
         .exec(
-            (err, usuarios) => {
+            (err, centrosMedicos) => {
                 if (err) {
                     return res.status(500).json({
                         ok: false,
-                        mensaje: 'Error cargando usuarios.',
+                        mensaje: 'Error cargando Centros Médicos.',
                         errors: err
                     });
                 }
-
-                Usuario.count({}, (err, conteo) => {
+                CentroMedico.count({}, (err, conteo) => {
                     res.status(200).json({
                         ok: true,
                         total: conteo,
-                        usuarios: usuarios
+                        centrosMedicos: centrosMedicos
                     });
                 });
-
             });
 });
 
-
-
-
 // ===========================
-// Actualizar usuario
+// Actualizar Centro Médico
 // ===========================
 
 app.put('/:id', mdAtenticacion.verificaToken, (req, res) => {
@@ -52,103 +44,98 @@ app.put('/:id', mdAtenticacion.verificaToken, (req, res) => {
     var id = req.params.id;
     var body = req.body;
 
-    Usuario.findById(id, (err, usuario) => {
+    CentroMedico.findById(id, (err, centroMedico) => {
         if (err) {
             return res.status(500).json({
                 ok: false,
-                mensaje: 'Error al buscar usuario.',
+                mensaje: 'Error al buscar Centro Médico.',
                 errors: err
             });
         }
 
-        if (!usuario) {
+        if (!centroMedico) {
             return res.status(400).json({
                 ok: false,
-                mensaje: 'El usuario con el id ' + id + ' no existe.',
-                errors: { message: 'No existe un usuario con ese ID.' }
+                mensaje: 'El Centro Médico con el id ' + id + ' no existe.',
+                errors: { message: 'No existe un Centro Médico con ese ID.' }
             });
         }
 
-        usuario.nombre = body.nombre;
-        usuario.apellido = body.apellido;
-        usuario.email = body.email;
-        usuario.role = body.role;
+        centroMedico.nombre = body.nombre;
+        centroMedico.usuario = req.usuario._id;
 
-        usuario.save((err, usuarioGuardado) => {
+        centroMedico.save((err, centroGuardado) => {
             if (err) {
                 return res.status(400).json({
                     ok: false,
-                    mensaje: 'Error al actualizar usuario.',
+                    mensaje: 'Error al actualizar Centro Médico.',
                     errors: err
                 });
             }
 
             res.status(200).json({
                 ok: true,
-                usuario: usuarioGuardado
+                centroMedico: centroGuardado
             });
         });
     });
 
 });
 
+
 // ===========================
-// Crear un nuevo usuario
+// Crear un nuevo Centro Médico
 // ===========================
 app.post('/', mdAtenticacion.verificaToken, (req, res) => {
     var body = req.body;
-    var usuario = new Usuario({
+    var centroMedico = new CentroMedico({
         nombre: body.nombre,
-        apellido: body.apellido,
-        email: body.email,
-        password: bcrypt.hashSync(body.password, 10),
-        img: body.img,
-        role: body.role
+        usuario: req.usuario._id
     });
 
-    usuario.save((err, usuarioGuardado) => {
+    centroMedico.save((err, centroGuardado) => {
         if (err) {
             return res.status(400).json({
                 ok: false,
-                mensaje: 'Error al crear usuario.',
+                mensaje: 'Error al crear Centro Médico.',
                 errors: err
             });
         }
         res.status(201).json({
             ok: true,
-            usuario: usuarioGuardado,
-            usuarioToken: req.usuario
+            centroMedico: centroGuardado,
         });
     });
 
 });
 
-// =============================
-// Eliminar un usuario por el id
-// =============================
+// ===================================
+// Eliminar un Centro Médico por el id
+// ===================================
 app.delete('/:id', mdAtenticacion.verificaToken, (req, res) => {
     var id = req.params.id;
 
-    Usuario.findByIdAndRemove(id, (err, usuarioBorrado) => {
+    CentroMedico.findByIdAndRemove(id, (err, centroBorrado) => {
         if (err) {
             return res.status(500).json({
                 ok: false,
-                mensaje: 'Error al borrar usuario.',
+                mensaje: 'Error al borrar Centro Médico.',
                 errors: err
             });
         }
-        if (!usuarioBorrado) {
+        if (!centroBorrado) {
             return res.status(400).json({
                 ok: false,
-                mensaje: 'El usuario con el id ' + id + ' no existe.',
-                errors: { message: 'No existe un usuario con ese ID.' }
+                mensaje: 'El Centro Médico con el id ' + id + ' no existe.',
+                errors: { message: 'No existe un Centro Médico con ese ID.' }
             });
         }
         res.status(200).json({
             ok: true,
-            usuario: usuarioBorrado
+            centroMedico: centroBorrado
         });
     });
 });
+
 
 module.exports = app;

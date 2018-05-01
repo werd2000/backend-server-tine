@@ -15,10 +15,14 @@ app.use(bodyParser.json());
 // Importar rutas
 var appRoutes = require('./routes/app');
 var usuarioRoutes = require('./routes/usuario');
+var centroMedicoRoutes = require('./routes/centroMedico');
+var profesionalRoutes = require('./routes/profesional');
 var loginRoutes = require('./routes/login');
+var busquedaRoutes = require('./routes/busqueda');
+var uploadRoutes = require('./routes/upload');
+var imagenesRoutes = require('./routes/imagenes');
 
 // Conexción a la BD
-// mongoose.connect('mongodb://localhost:27017/tineDb')
 mongoose.connection.openUri('mongodb://localhost:27017/tineDb', (err, res) => {
 
     if (err) throw err;
@@ -28,7 +32,12 @@ mongoose.connection.openUri('mongodb://localhost:27017/tineDb', (err, res) => {
 });
 
 // Rutas
+app.use('/upload', uploadRoutes);
+app.use('/img', imagenesRoutes);
+app.use('/busqueda', busquedaRoutes);
 app.use('/usuario', usuarioRoutes);
+app.use('/centro_medico', centroMedicoRoutes);
+app.use('/profesional', profesionalRoutes);
 app.use('/login', loginRoutes);
 app.use('/', appRoutes);
 
