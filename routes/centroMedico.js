@@ -53,6 +53,7 @@ app.put('/:id', mdAtenticacion.verificaToken, (req, res) => {
             });
         }
 
+
         if (!centroMedico) {
             return res.status(400).json({
                 ok: false,
@@ -137,5 +138,35 @@ app.delete('/:id', mdAtenticacion.verificaToken, (req, res) => {
     });
 });
 
+// ==========================================
+// Obtener Centro Médico por ID
+// ==========================================
+app.get('/:id', (req, res) => {
+    var id = req.params.id;
+    CentroMedico.findById(id)
+        .populate('usuario', 'nombre img email')
+        .exec((err, centroMedico) => {
+            if (err) {
+                return res.status(500).json({
+                    ok: false,
+                    mensaje: 'Error al buscar centro médico',
+                    errors: err
+                });
+            }
+            if (!centroMedico) {
+                return res.status(400).json({
+                    ok: false,
+                    mensaje: 'El centro médico con el id ' + id + ' no existe ',
+                    errors: {
+                        message: 'No existe un centro médico con ese ID '
+                    }
+                });
+            }
+            res.status(200).json({
+                ok: true,
+                centroMedico: centroMedico
+            });
+        })
+})
 
 module.exports = app;

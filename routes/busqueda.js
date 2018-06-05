@@ -105,8 +105,8 @@ function buscarProfesional(busqueda, regex) {
 function buscarUsuario(busqueda, regex) {
     return new Promise((resolve, reject) => {
 
-        Usuario.find({}, 'nombre apellido email role')
-            .or([{ 'nombre': regex, 'apellido': regex, 'email': regex }])
+        Usuario.find({}, 'nombre email role google img')
+            .or([{ 'nombre': regex, 'email': regex }])
             .exec((err, usuarios) => {
                 if (err) {
                     reject('Error al cargar usuarios', err);

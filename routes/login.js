@@ -12,6 +12,19 @@ var CLIENT_ID = require('../config/config').CLIENT_ID;
 const { OAuth2Client } = require('google-auth-library');
 const client = new OAuth2Client(CLIENT_ID);
 
+var mdAutenticacion = require('../middlewares/autenticacion');
+
+// ==============================
+// Autenticación con Google
+// ==============================
+app.get('/renuevaToken', mdAutenticacion.verificaToken, (req, res) => {
+    var token = jwt.sign({ usuario: res.usuario }, SEED, { expiresIn: 14400 });
+    res.status(200).json({
+        ok: true,
+        token: token
+    });
+});
+
 // ==============================
 // Autenticación con Google
 // ==============================
@@ -43,7 +56,7 @@ app.post('/google', async(req, res) => {
                 ok: false,
                 mensaje: 'Token no válido'
             });
-        })
+        });
 
     Usuario.findOne({ email: googleUser.email }, (err, usuarioDb) => {
         if (err) {
@@ -66,7 +79,8 @@ app.post('/google', async(req, res) => {
                     ok: true,
                     usuario: usuarioDb,
                     token: token,
-                    id: usuarioDb._id
+                    id: usuarioDb._id,
+                    menu: obtenerMenu(usuarioDb.role)
                 });
             }
         } else {
@@ -85,7 +99,8 @@ app.post('/google', async(req, res) => {
                     ok: true,
                     usuario: usuarioDb,
                     token: token,
-                    id: usuarioDb._id
+                    id: usuarioDb._id,
+                    menu: obtenerMenu(usuarioDb.role)
                 });
             });
         }
@@ -138,12 +153,43 @@ app.post('/', (req, res) => {
             ok: true,
             usuario: usuarioDb,
             token: token,
-            id: usuarioDb._id
+            id: usuarioDb._id,
+            menu: obtenerMenu(usuarioDb.role)
         });
 
     });
 
 });
+
+function obtenerMenu(role) {
+    var menu = [{
+            titulo: 'Principal',
+            icono: 'mdi mdi-gauge',
+            submenu: [
+                { titulo: 'Dashboard', url: '/dashboard' },
+                { titulo: 'ProgressBar', url: '/progress' },
+                { titulo: 'Gráficas', url: '/graficas1' },
+                { titulo: 'Promesas', url: '/promesas' },
+                { titulo: 'Rxjs', url: '/rxjs' }
+            ]
+        },
+        {
+            titulo: 'Mantenimiento',
+            icono: 'mdi mdi-folder-lock-open',
+            submenu: [
+                // { titulo: 'Usuarios', url: '/usuarios' },
+                { titulo: 'Profesionales', url: '/profesionales' },
+                { titulo: 'Centros Médicos', url: '/centros-medicos' }
+            ]
+        }
+    ];
+
+    if (role === 'ADMIN_ROLE') {
+        menu[1].submenu.unshift({ titulo: 'Usuarios', url: '/usuarios' });
+
+    }
+    return menu;
+}
 
 
 

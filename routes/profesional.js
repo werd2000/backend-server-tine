@@ -29,17 +29,50 @@ app.get('/', (req, res, next) => {
                 Profesional.count({}, (err, conteo) => {
                     res.status(200).json({
                         ok: true,
-                        total: conteo,
-                        profesionales: profesionales
+                        profesionales: profesionales,
+                        total: conteo
                     });
                 })
             });
 });
 
 // ===========================
+// Obtener un Profesional
+// ===========================
+app.get('/:id', (req, res) => {
+    var id = req.params.id;
+    Profesional.findById(id)
+        .populate('usuario', 'nombre img email')
+        .populate('centroMedico')
+        .exec((err, profesional) => {
+            if (err) {
+                return res.status(500).json({
+                    ok: false,
+                    mensaje: 'Error al buscar Profesional.',
+                    errors: err
+                });
+            }
+
+            if (!profesional) {
+                return res.status(400).json({
+                    ok: false,
+                    mensaje: 'El Profesional con el id ' + id + ' no existe.',
+                    errors: { message: 'No existe un Profesional con ese ID.' }
+                });
+            }
+
+            res.status(200).json({
+                ok: true,
+                profesional: profesional
+            });
+        });
+
+});
+
+
+// ===========================
 // Actualizar Profesional
 // ===========================
-
 app.put('/:id', mdAtenticacion.verificaToken, (req, res) => {
 
     var id = req.params.id;
@@ -63,7 +96,6 @@ app.put('/:id', mdAtenticacion.verificaToken, (req, res) => {
         }
 
         profesional.nombre = body.nombre;
-        profesional.apellido = body.apellido;
         profesional.centroMedico = body.centroMedico;
 
         profesional.save((err, profesionalGuardado) => {
@@ -92,7 +124,6 @@ app.post('/', mdAtenticacion.verificaToken, (req, res) => {
     var body = req.body;
     var profesional = new Profesional({
         nombre: body.nombre,
-        apellido: body.apellido,
         centroMedico: body.centroMedico,
         usuario: req.usuario._id
     });
